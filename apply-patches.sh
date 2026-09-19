@@ -85,7 +85,7 @@ echo "[5/5] 更新 ipq-wifi Makefile..."
 
 if ! grep -q "link_nn6000" "${WIFI_MK}"; then
     sed -i '/iodata_wn-dax3000gr \\/a\\tlink_nn6000 \\' "${WIFI_MK}"
-    grep -qE '^link_nn6000 \\$' "${WIFI_MK}" || { echo "ERROR: ALLWIFIBOARDS 插入失败"; exit 1; }
+    grep -qP '^\tlink_nn6000 \\$' "${WIFI_MK}" || { echo "ERROR: ALLWIFIBOARDS 插入失败"; exit 1; }
 fi
 
 if ! grep -q "generate-ipq-wifi-package,link_nn6000" "${WIFI_MK}"; then
