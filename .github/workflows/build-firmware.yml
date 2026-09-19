@@ -7,6 +7,10 @@ env:
   ISTOREOS_BRANCH: istoreos-25.12
   TARGET_PROFILE: link_nn6000-v2
 
+# 创建 Release
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build NN6000 v2 Firmware

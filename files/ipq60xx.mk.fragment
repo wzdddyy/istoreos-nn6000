@@ -6,7 +6,7 @@ define Device/link_nn6000-v1
 	SOC := ipq6000
 	KERNEL_SIZE := 12288k
 	DEVICE_DTS_CONFIG := config@cp03-c1
-	DEVICE_PACKAGES := ipq-wifi-link_nn6000 kmod-fs-f2fs f2fs-tools
+	DEVICE_PACKAGES := ipq-wifi-link_nn6000 kmod-fs-f2fs f2fs-tools dockerd luci-app-dockerman
 	IMAGE/factory.bin := append-kernel | pad-to $$(KERNEL_SIZE) | append-rootfs | append-metadata
 endef
 TARGET_DEVICES += link_nn6000-v1
