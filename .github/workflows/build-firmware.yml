@@ -14,20 +14,15 @@ jobs:
     timeout-minutes: 360
 
     steps:
-      # ============================================================
-      # Step 1: 释放磁盘空间
-      # ============================================================
+      # 释放磁盘空间
       - name: Free disk space
         run: |
-          echo "=== 释放磁盘空间 ==="
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/share/boost
           sudo apt-get clean
           sudo apt-get autoremove -y
           df -h /
 
-      # ============================================================
-      # Step 2: 安装编译依赖
-      # ============================================================
+      # 安装编译依赖
       - name: Install build dependencies
         run: |
           sudo apt-get update
@@ -41,36 +36,25 @@ jobs:
             clang ccache \
             git subversion mercurial \
             wget curl
-          # Python 兼容性：确保 python 命令可用
           sudo ln -sf /usr/bin/python3 /usr/bin/python || true
           df -h /
 
-      # ============================================================
-      # Step 3: 检出本仓库（获取补丁文件和脚本）
-      # ============================================================
+      # 检出补丁仓库
       - name: Checkout patch repo
         uses: actions/checkout@v4
         with:
           path: patches
 
-      # ============================================================
-      # Step 4: 克隆 iStoreOS 25.12 源码
-      # ============================================================
+      # 克隆 iStoreOS 源码
       - name: Clone iStoreOS source
         run: |
-          echo "=== 克隆 iStoreOS ${ISTOREOS_BRANCH} ==="
           git clone --depth=1 --branch ${ISTOREOS_BRANCH} \
             https://github.com/istoreos/istoreos.git istoreos
           cd istoreos
-          echo "最新提交:"
           git log --oneline -1
           df -h /
 
-      # ============================================================
-      # Step 4b: 缓存工具链和 ccache（加速二次编译）
-      # 必须放在 clone 之后，否则 cache 恢复会创建 istoreos/ 目录
-      # 导致上面的 git clone 因目标目录非空而失败
-      # ============================================================
+      # 缓存工具链（必须在 clone 之后，否则会导致 clone 失败）
       - name: Cache toolchain
         id: cache-tc
         uses: actions/cache@v4
@@ -80,93 +64,60 @@ jobs:
             istoreos/build_dir
             istoreos/tmp
             ~/.ccache
-          # 使用静态 key（qualcommax 平台无预编译工具链，必须从源码编译）
-          # 需要强制刷新缓存时，修改下面的版本号即可
           key: toolchain-qualcommax-ipq60xx-25.12-v1
           restore-keys: |
             toolchain-qualcommax-ipq60xx-25.12-
 
-      # ============================================================
-      # Step 5: 应用 NN6000 设备补丁
-      # ============================================================
+      # 应用设备补丁
       - name: Apply NN6000 device patches
         run: |
           cd istoreos
           bash ../patches/apply-patches.sh
 
-      # ============================================================
-      # Step 6: 更新 feeds
-      # ============================================================
+      # 更新 feeds
       - name: Update and install feeds
         run: |
           cd istoreos
-          echo "=== 更新 feeds ==="
           ./scripts/feeds update -a
-          echo "=== 安装 feeds ==="
           ./scripts/feeds install -a
 
-      # ============================================================
-      # Step 7: 配置编译选项
-      # ============================================================
+      # 配置编译选项
       - name: Configure build
         run: |
           cd istoreos
-          echo "=== 生成 .config ==="
-          # 写入种子配置（确保缩进正确，不能有多余空行）
           cat > .config << 'SEED'
           CONFIG_TARGET_qualcommax=y
           CONFIG_TARGET_qualcommax_ipq60xx=y
           CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_link_nn6000-v2=y
           SEED
-          # 自动解析依赖，填充默认值
           make defconfig
-          echo "=== 最终配置 ==="
-          grep -E 'CONFIG_TARGET|CONFIG_PACKAGE_luci|CONFIG_PACKAGE_iStore|CONFIG_PACKAGE_ipq-wifi' .config || true
 
-      # ============================================================
-      # Step 8: 下载工具链和源码
-      # ============================================================
+      # 下载源码
       - name: Download sources
         run: |
           cd istoreos
-          echo "=== 下载工具链和源码包 ==="
           make download -j$(nproc) V=s 2>&1 | tail -20 || true
 
-      # ============================================================
-      # Step 9: 编译固件
-      # ============================================================
+      # 编译固件
       - name: Build firmware
         run: |
           cd istoreos
-          echo "=== 开始编译 ==="
-          # 使用 ccache 加速
           export CCACHE_DIR="$HOME/.ccache"
           mkdir -p "$CCACHE_DIR"
           make -j$(nproc) V=s 2>&1 | tee build.log | tail -50
-          echo "=== 编译结果 ==="
           ls -lh bin/targets/qualcommax/ipq60xx/ 2>/dev/null || echo "未找到输出文件"
 
-      # ============================================================
-      # Step 10: 整理输出文件
-      # ============================================================
+      # 整理输出文件
       - name: Prepare artifacts
         if: always()
         run: |
           cd istoreos
-          mkdir -p artifacts/firmware
-          mkdir -p artifacts/logs
-          # 复制固件文件
+          mkdir -p artifacts/firmware artifacts/logs
           cp -r bin/targets/qualcommax/ipq60xx/* artifacts/firmware/ 2>/dev/null || true
-          # 复制编译日志
-          cp build.log artifacts/logs/ 2>/dev/null || true
-          cp .config artifacts/logs/ 2>/dev/null || true
-          # 显示文件列表
-          echo "=== 生成的固件文件 ==="
+          cp build.log .config artifacts/logs/ 2>/dev/null || true
           find artifacts/firmware -type f -exec ls -lh {} \; 2>/dev/null || echo "无固件文件"
 
-      # ============================================================
-      # Step 11: 上传固件 artifacts
-      # ============================================================
+      # 上传固件
       - name: Upload firmware artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -176,9 +127,7 @@ jobs:
           retention-days: 14
           if-no-files-found: warn
 
-      # ============================================================
-      # Step 12: 上传编译日志
-      # ============================================================
+      # 上传编译日志
       - name: Upload build logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -190,30 +139,20 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
 
-      # ============================================================
-      # Step 13: 生成固件信息文件
-      # ============================================================
+      # 生成固件信息
       - name: Generate firmware info
         if: success()
         id: info
         run: |
-          # 获取编译日期
           BUILD_DATE=$(date -u +"%Y-%m-%d")
-          # 获取 iStoreOS 提交哈希
           cd istoreos
           COMMIT_HASH=$(git rev-parse --short HEAD)
           COMMIT_DATE=$(git log -1 --format=%ci | cut -d' ' -f1)
           echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
           echo "commit_hash=${COMMIT_HASH}" >> $GITHUB_OUTPUT
           echo "commit_date=${COMMIT_DATE}" >> $GITHUB_OUTPUT
-          echo "=== 固件信息 ==="
-          echo "编译日期: ${BUILD_DATE}"
-          echo "iStoreOS 提交: ${COMMIT_HASH} (${COMMIT_DATE})"
-          echo "目标设备: Link NN6000 v2 (qualcommax/ipq60xx)"
 
-      # ============================================================
-      # Step 14: 创建 GitHub Release 并上传固件
-      # ============================================================
+      # 创建 Release
       - name: Create GitHub Release and Upload Firmware
         if: success()
         uses: softprops/action-gh-release@v2
@@ -223,28 +162,19 @@ jobs:
           body: |
             ## iStoreOS Link NN6000 v2 固件
 
-            ### 固件信息
             - **目标设备**: Link NN6000 v2
-            - **平台**: Qualcomm Atheros ipq60xx (ipq6000)
+            - **平台**: qualcommax/ipq60xx (ipq6000)
             - **iStoreOS 分支**: ${{ env.ISTOREOS_BRANCH }}
             - **iStoreOS 提交**: ${{ steps.info.outputs.commit_hash }} (${{ steps.info.outputs.commit_date }})
             - **编译日期**: ${{ steps.info.outputs.build_date }}
 
-            ### 固件文件说明
             | 文件 | 用途 |
             |------|------|
-            | `*-squashfs-sysupgrade.bin` | 已安装 OpenWrt/iStoreOS 的设备通过 sysupgrade 升级 |
-            | `*-squashfs-factory.bin` | 从原厂固件首次刷入 |
-            | `*-initramfs-uImage.itb` | 通过 TFTP 启动测试，不刷写 Flash |
+            | `*-sysupgrade.bin` | 已装 OpenWrt/iStoreOS 升级 |
+            | `*-factory.bin` | 从原厂固件首次刷入 |
+            | `*-initramfs-uImage.itb` | TFTP 启动测试，不写 Flash |
 
-            ### 刷写步骤
-            1. **首次测试**：下载 `initramfs-uImage.itb`，通过 TFTP 引导启动，确认网络/WiFi/USB 正常
-            2. **正式刷写**：使用 `factory.bin` 从原厂固件刷入，或使用 `sysupgrade.bin` 从已安装的系统升级
-
-            ### 注意事项
-            - WiFi 驱动使用 `ipq-wifi-link_nn6000` 校准数据包
-            - 存储为 eMMC，使用 `f2fs` 文件系统
-            - **警告**：此固件非官方构建，刷写风险自负
+            非官方构建，刷写风险自负。
           files: |
             istoreos/artifacts/firmware/*-squashfs-sysupgrade.bin
             istoreos/artifacts/firmware/*-squashfs-factory.bin

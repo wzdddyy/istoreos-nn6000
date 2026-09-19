@@ -37,8 +37,7 @@
 	};
 
 	leds {
-		/* Single RGB led controlled via GPIO.
-		To mimic the OEM default behaviour red are switched on from boot */
+		/* RGB LED，开机默认红色 */
 		compatible = "gpio-leds";
 
 		led_status_red: status-red {
