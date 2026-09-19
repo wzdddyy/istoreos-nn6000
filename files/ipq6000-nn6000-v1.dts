@@ -6,22 +6,27 @@
 / {
 	model = "Link NN6000 v1";
 	compatible = "link,nn6000-v1", "qcom,ipq6018";
-
-	aliases {
-		ethernet1 = &swport2;
-		ethernet2 = &swport3;
-		ethernet3 = &swport4;
-	};
 };
 
-&swport2 {
+&switch {
+	switch_lan_bmp = <(ESS_PORT3 | ESS_PORT4)>;
+	switch_wan_bmp = <ESS_PORT2>;
+};
+
+&dp2 {
+	status = "okay";
+	phy-handle = <&qca8075_1>;
 	label = "wan";
 };
 
-&swport3 {
+&dp3 {
+	status = "okay";
+	phy-handle = <&qca8075_2>;
 	label = "lan1";
 };
 
-&swport4 {
+&dp4 {
+	status = "okay";
+	phy-handle = <&qca8075_3>;
 	label = "lan2";
 };

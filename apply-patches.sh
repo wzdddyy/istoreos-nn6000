@@ -75,8 +75,10 @@ fi
 if grep -q "generate-ipq-wifi-package,link_nn6000" "${WIFI_MK}"; then
     echo "  -> generate-ipq-wifi-package 调用已存在，跳过"
 else
-    # 在 linksys_homewrk 行前面插入
-    sed -i '/linksys_homewrk/i\$(eval $(call generate-ipq-wifi-package,link_nn6000,Link NN6000))' "${WIFI_MK}"
+    # 在 linksys_homewrk 的 generate-ipq-wifi-package 行前面插入
+    # 注意：不能用 /linksys_homewrk/ 作为匹配，因为 ALLWIFIBOARDS 列表中
+    # 也有 linksys_homewrk 行，会导致在列表中间插入 eval 调用，破坏 Makefile
+    sed -i '/generate-ipq-wifi-package,linksys_homewrk/i\$(eval $(call generate-ipq-wifi-package,link_nn6000,Link NN6000))' "${WIFI_MK}"
     echo "  -> generate-ipq-wifi-package 调用已添加"
 fi
 

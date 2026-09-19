@@ -158,62 +158,30 @@
 	};
 };
 
-&uniphy0 {
-	status = "okay";
-};
-
 &switch {
 	status = "okay";
+	switch_mac_mode = <MAC_MODE_PSGMII>;
 
-	ports {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		port@0 {
-			reg = <0>;
-			ethernet = <&edma>;
-			phy-mode = "internal";
-			fixed-link {
-				speed = <1000>;
-				full-duplex;
-			};
+	qcom,port_phyinfo {
+		port@1 {
+			port_id = <1>;
+			phy_address = <0>;
 		};
-
-		swport1: port@1 {
-			reg = <1>;
-			phy-handle = <&qca8075_0>;
-			phy-mode = "psgmii";
-			pcs-handle = <&uniphy0 0>;
-			status = "disabled";
+		port@2 {
+			port_id = <2>;
+			phy_address = <1>;
 		};
-
-		swport2: port@2 {
-			reg = <2>;
-			phy-handle = <&qca8075_1>;
-			phy-mode = "psgmii";
-			pcs-handle = <&uniphy0 1>;
+		port@3 {
+			port_id = <3>;
+			phy_address = <2>;
 		};
-
-		swport3: port@3 {
-			reg = <3>;
-			phy-handle = <&qca8075_2>;
-			phy-mode = "psgmii";
-			pcs-handle = <&uniphy0 2>;
+		port@4 {
+			port_id = <4>;
+			phy_address = <3>;
 		};
-
-		swport4: port@4 {
-			reg = <4>;
-			phy-handle = <&qca8075_3>;
-			phy-mode = "psgmii";
-			pcs-handle = <&uniphy0 3>;
-		};
-
-		swport5: port@5 {
-			reg = <5>;
-			phy-handle = <&qca8075_4>;
-			phy-mode = "psgmii";
-			pcs-handle = <&uniphy0 4>;
-			status = "disabled";
+		port@5 {
+			port_id = <5>;
+			phy_address = <4>;
 		};
 	};
 };

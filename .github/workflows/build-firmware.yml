@@ -15,22 +15,6 @@ jobs:
 
     steps:
       # ============================================================
-      # Step 0: 缓存工具链和 ccache（加速二次编译）
-      # ============================================================
-      - name: Cache toolchain
-        id: cache-tc
-        uses: actions/cache@v4
-        with:
-          path: |
-            istoreos/staging_dir
-            istoreos/build_dir
-            istoreos/tmp
-            ~/.ccache
-          key: toolchain-qualcommax-ipq60xx-25.12-${{ hashFiles('istoreos/target/linux/qualcommax/**', 'istoreos/toolchain/**') }}
-          restore-keys: |
-            toolchain-qualcommax-ipq60xx-25.12-
-
-      # ============================================================
       # Step 1: 释放磁盘空间
       # ============================================================
       - name: Free disk space
@@ -81,6 +65,26 @@ jobs:
           echo "最新提交:"
           git log --oneline -1
           df -h /
+
+      # ============================================================
+      # Step 4b: 缓存工具链和 ccache（加速二次编译）
+      # 必须放在 clone 之后，否则 cache 恢复会创建 istoreos/ 目录
+      # 导致上面的 git clone 因目标目录非空而失败
+      # ============================================================
+      - name: Cache toolchain
+        id: cache-tc
+        uses: actions/cache@v4
+        with:
+          path: |
+            istoreos/staging_dir
+            istoreos/build_dir
+            istoreos/tmp
+            ~/.ccache
+          # 使用静态 key（qualcommax 平台无预编译工具链，必须从源码编译）
+          # 需要强制刷新缓存时，修改下面的版本号即可
+          key: toolchain-qualcommax-ipq60xx-25.12-v1
+          restore-keys: |
+            toolchain-qualcommax-ipq60xx-25.12-
 
       # ============================================================
       # Step 5: 应用 NN6000 设备补丁
@@ -193,11 +197,10 @@ jobs:
         if: success()
         id: info
         run: |
-          cd istoreos/artifacts/firmware
           # 获取编译日期
           BUILD_DATE=$(date -u +"%Y-%m-%d")
           # 获取 iStoreOS 提交哈希
-          cd ../../istoreos
+          cd istoreos
           COMMIT_HASH=$(git rev-parse --short HEAD)
           COMMIT_DATE=$(git log -1 --format=%ci | cut -d' ' -f1)
           echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
