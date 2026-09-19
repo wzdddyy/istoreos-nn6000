@@ -19,6 +19,22 @@ jobs:
 
     steps:
       # ============================================================
+      # Step 0: 缓存工具链和 ccache（加速二次编译）
+      # ============================================================
+      - name: Cache toolchain
+        id: cache-tc
+        uses: actions/cache@v4
+        with:
+          path: |
+            istoreos/staging_dir
+            istoreos/build_dir
+            istoreos/tmp
+            ~/.ccache
+          key: toolchain-qualcommax-ipq60xx-25.12-${{ hashFiles('istoreos/target/linux/qualcommax/**', 'istoreos/toolchain/**') }}
+          restore-keys: |
+            toolchain-qualcommax-ipq60xx-25.12-
+
+      # ============================================================
       # Step 1: 释放磁盘空间
       # ============================================================
       - name: Free disk space
