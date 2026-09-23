@@ -108,8 +108,10 @@ jobs:
           cd istoreos
           export CCACHE_DIR="$HOME/.ccache"
           mkdir -p "$CCACHE_DIR"
-          make -j$(nproc) V=s 2>&1 | tee build.log | tail -50
-          ls -lh bin/targets/qualcommax/ipq60xx/ 2>/dev/null || echo "未找到输出文件"
+          # pipefail: make 失败时让步骤报错
+          set -o pipefail
+          make -j$(nproc) 2>&1 | tee build.log
+          ls -lh bin/targets/qualcommax/ipq60xx/
 
       # 整理输出文件
       - name: Prepare artifacts
