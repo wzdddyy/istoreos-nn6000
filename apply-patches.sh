@@ -56,8 +56,15 @@ if anchor not in src:
 case_block = (
     '\tlink,nn6000-v1)|\\\n'
     '\tlink,nn6000-v2)\n'
-    '\t\tCI_KERNPART="0:HLOS"\n'
-    '\t\tCI_ROOTPART="rootfs"\n'
+    '\t\tlocal cfgpart=$(find_mmc_part "0:BOOTCONFIG")\n'
+    '\t\tpart_num="$(hexdump -e \'1/1 "%01x|"\' -n 1 -s 148 -C $cfgpart | cut -f 1 -d "|" | head -n1)"\n'
+    '\t\tif [ "$part_num" -eq "1" ]; then\n'
+    '\t\t\tCI_KERNPART="0:HLOS_1"\n'
+    '\t\t\tCI_ROOTPART="rootfs_1"\n'
+    '\t\telse\n'
+    '\t\t\tCI_KERNPART="0:HLOS"\n'
+    '\t\t\tCI_ROOTPART="rootfs"\n'
+    '\t\tfi\n'
     '\t\temmc_do_upgrade "$1"\n'
     '\t\t;;\n'
 )
