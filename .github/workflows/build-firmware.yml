@@ -103,7 +103,8 @@ jobs:
           echo "==== 1. .config 中 Web 相关包状态 ===="
           for pkg in uhttpd uhttpd-mod-ubus rpcd rpcd-mod-file luci luci-base \
                      luci-app-store luci-lib-taskd taskd luci-app-dockerman \
-                     nginx nginx-util luci-light luci-nginx curl tar mount-utils; do
+                     nginx nginx-util luci-light luci-nginx curl tar mount-utils \
+                     libuci-lua luci-lua-runtime; do
             line=$(grep -E "^CONFIG_PACKAGE_${pkg}=" .config || echo "(未选入)")
             echo "${pkg} : ${line}"
           done
@@ -111,8 +112,8 @@ jobs:
           echo "==== 2. DEFAULT_PACKAGES 默认标记 ===="
           grep -E "^CONFIG_DEFAULT_" .config | grep -iE 'uhttpd|luci|rpcd|nginx|store' || echo "(无默认标记)"
 
-          echo "==== 3. luci-app-store 在 packageinfo 中的依赖 ===="
-          awk '/^Package: luci-app-store$/{f=1} f{print} /^$/{if(f)exit}' tmp/.packageinfo | head -20
+          echo "==== 3. luci-app-store 依赖链递归分析（挖到根因符号） ===="
+          python3 ../patches/scripts/diagnose-deps.py
 
           echo "==== 4. feeds 是否安装成功 ===="
           ls package/feeds/

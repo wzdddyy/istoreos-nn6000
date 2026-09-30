@@ -3,6 +3,7 @@
 *.yml      text eol=lf
 *.md       text eol=lf
 *.fragment text eol=lf
+*.py       text eol=lf
 *.dts      text eol=lf
 *.dts[io]  text eol=lf
 files/11_fix_wifi_mac text eol=lf
