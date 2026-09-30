@@ -76,3 +76,52 @@ for root in ('luci-app-store', 'tar', 'taskd'):
     print('--- 根: %s ---' % root)
     analyze(root)
     print()
+
+# 直接 dump 生成的 Kconfig 原始段落，看 default/depends 真相
+print('==== 4. 生成的 Kconfig 原始段落 ====')
+import os
+
+candidates = [
+    'tmp/.config-package.in',
+    'tmp/.config-packages.in',
+]
+kcfg = None
+for c in candidates:
+    if os.path.exists(c):
+        kcfg = c
+        break
+if kcfg is None:
+    # 退而求其次：扫描 tmp 下所有 .in
+    import glob
+    found = glob.glob('tmp/.config*.in')
+    print('候选文件:', found)
+    kcfg = found[0] if found else None
+
+if kcfg:
+    print('读取:', kcfg)
+    text = io.open(kcfg, encoding='utf-8', errors='replace').read()
+    blocks = re.split(r'\n(?=config )', text)
+    targets = [
+        'DEFAULT_luci-app-store', 'DEFAULT_luci-app-dockerman',
+        'PACKAGE_luci-app-store', 'PACKAGE_tar', 'PACKAGE_libuci-lua',
+        'PACKAGE_luci-lib-taskd', 'PACKAGE_taskd', 'PACKAGE_luci',
+        'PACKAGE_uhttpd',
+    ]
+    index = {}
+    for b in blocks:
+        m = re.match(r'config (\S+)', b)
+        if m:
+            index[m.group(1)] = b.rstrip()
+    for t in targets:
+        print('---- config %s ----' % t)
+        print(index.get(t, '(不存在)'))
+        print()
+else:
+    print('未找到生成的 Kconfig 文件')
+
+print('==== 5. DEFAULT 符号是如何被引用的 ====')
+if kcfg:
+    for t in ('PACKAGE_luci-app-store', 'PACKAGE_luci-app-dockerman'):
+        b = index.get(t, '')
+        for dl in re.findall(r'^\s*default .*$', b, re.M):
+            print('%s -> %s' % (t, dl.strip()))

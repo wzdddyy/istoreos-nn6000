@@ -115,12 +115,12 @@ jobs:
           echo "==== 3. luci-app-store 依赖链递归分析（挖到根因符号） ===="
           python3 ../patches/scripts/diagnose-deps.py
 
-          echo "==== 4. feeds 是否安装成功 ===="
+          echo "==== 6. feeds 是否安装成功 ===="
           ls package/feeds/
           echo "store feed 包数量: $(ls package/feeds/store 2>/dev/null | wc -l)"
           echo "luci feed 包数量: $(ls package/feeds/luci 2>/dev/null | wc -l)"
 
-          echo "==== 5. 构建系统选择的包管理器 ===="
+          echo "==== 7. 构建系统选择的包管理器 ===="
           grep -E "CONFIG_USE_(APK|OPKG)" .config || echo "(未设置)"
 
           echo "==== 结论判定 ===="
