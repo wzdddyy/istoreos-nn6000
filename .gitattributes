@@ -1,6 +1,7 @@
 * -text
 *.sh       text eol=lf
 *.yml      text eol=lf
+*.md       text eol=lf
 *.fragment text eol=lf
 *.dts      text eol=lf
 *.dts[io]  text eol=lf
