@@ -4,7 +4,7 @@
 
 ## ⚠️ 当前状态：测试中
 
-固件仍在测试阶段，欢迎在 [Issues](https://github.com/ZZJ/istoreos-nn6000/issues) 反馈使用中遇到的问题，例如无法启动、网口异常、WiFi 不稳定等，反馈时请注明设备版本（v1 / v2）和刷机方式。
+固件仍在测试阶段，欢迎在 [Issues](https://github.com/wzdddyy/istoreos-nn6000/issues) 反馈使用中遇到的问题，例如无法启动、网口异常、WiFi 不稳定等，反馈时请注明设备版本（v1 / v2）和刷机方式。
 
 ## 固件特点
 
