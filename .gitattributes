@@ -6,5 +6,6 @@
 *.dts      text eol=lf
 *.dts[io]  text eol=lf
 files/11_fix_wifi_mac text eol=lf
+files/992_argon_default text eol=lf
 
 *.patch whitespace=-indent-with-non-tab,-space-before-tab,-tab-in-indent,-trailing-space
