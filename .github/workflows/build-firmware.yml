@@ -58,7 +58,7 @@ jobs:
           git log --oneline -1
           df -h /
 
-      # 缓存工具链（必须在 clone 之后，否则会导致 clone 失败）
+      # 缓存工具链
       - name: Cache toolchain
         id: cache-tc
         uses: actions/cache@v4
@@ -93,6 +93,10 @@ jobs:
           CONFIG_TARGET_qualcommax=y
           CONFIG_TARGET_qualcommax_ipq60xx=y
           CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_link_nn6000-v2=y
+          # 关闭 tar 的可选压缩支持
+          # CONFIG_PACKAGE_TAR_BZIP2 is not set
+          # CONFIG_PACKAGE_TAR_XZ is not set
+          # CONFIG_PACKAGE_TAR_ZSTD is not set
           SEED
           make defconfig
 
