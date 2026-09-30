@@ -4,5 +4,6 @@
 *.fragment text eol=lf
 *.dts      text eol=lf
 *.dts[io]  text eol=lf
+files/11_fix_wifi_mac text eol=lf
 
 *.patch whitespace=-indent-with-non-tab,-space-before-tab,-tab-in-indent,-trailing-space

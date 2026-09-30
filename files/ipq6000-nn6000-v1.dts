@@ -6,11 +6,39 @@
 / {
 	model = "Link NN6000 v1";
 	compatible = "link,nn6000-v1", "qcom,ipq6018";
+
+	aliases {
+		ethernet1 = &dp2;
+		ethernet2 = &dp3;
+		ethernet3 = &dp4;
+	};
+};
+
+&mdio {
+	ethernet-phy-package@0 {
+		qca8075_0: ethernet-phy@0 {
+			status = "disabled";
+		};
+
+		qca8075_4: ethernet-phy@4 {
+			status = "disabled";
+		};
+	};
 };
 
 &switch {
 	switch_lan_bmp = <(ESS_PORT3 | ESS_PORT4)>;
 	switch_wan_bmp = <ESS_PORT2>;
+
+	qcom,port_phyinfo {
+		port@1 {
+			status = "disabled";
+		};
+
+		port@5 {
+			status = "disabled";
+		};
+	};
 };
 
 &dp2 {

@@ -62,6 +62,8 @@
 };
 
 &tlmm {
+	gpio-reserved-ranges = <20 1>;
+
 	mdio_pins: mdio-pins {
 		mdc {
 			pins = "gpio64";
@@ -120,6 +122,7 @@
 	status = "okay";
 	pinctrl-0 = <&mdio_pins>;
 	pinctrl-names = "default";
+	reset-gpios = <&tlmm 75 GPIO_ACTIVE_LOW>;
 
 	ethernet-phy-package@0 {
 		compatible = "qcom,qca8075-package";
@@ -157,6 +160,9 @@
 
 &switch {
 	status = "okay";
+
+	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>;
+	switch_wan_bmp = <ESS_PORT2>;
 	switch_mac_mode = <MAC_MODE_PSGMII>;
 
 	qcom,port_phyinfo {

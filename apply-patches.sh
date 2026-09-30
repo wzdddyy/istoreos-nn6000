@@ -17,21 +17,21 @@ echo "==== 移植 Link NN6000 v1/v2 ===="
 
 # 1. 复制 DTS
 DTS_DST="target/linux/qualcommax/files/arch/arm64/boot/dts/qcom"
-echo "[1/5] 复制 DTS..."
+echo "[1/8] 复制 DTS..."
 cp "${FILES_DIR}/ipq6000-link.dtsi"      "${DTS_DST}/"
 cp "${FILES_DIR}/ipq6000-nn6000-v1.dts" "${DTS_DST}/"
 cp "${FILES_DIR}/ipq6000-nn6000-v2.dts" "${DTS_DST}/"
 
 # 2. 追加设备定义
 IMAGE_MK="target/linux/qualcommax/image/ipq60xx.mk"
-echo "[2/5] 追加设备定义..."
+echo "[2/8] 追加设备定义..."
 if ! grep -q "link_nn6000" "${IMAGE_MK}"; then
     cat "${FILES_DIR}/ipq60xx.mk.fragment" >> "${IMAGE_MK}"
 fi
 
 # 3. 02_network 插入网络配置（改写收尾行保证幂等）
 NETWORK_FILE="target/linux/qualcommax/ipq60xx/base-files/etc/board.d/02_network"
-echo "[3/5] 更新 02_network..."
+echo "[3/8] 更新 02_network..."
 if ! grep -q "link,nn6000-v1" "${NETWORK_FILE}"; then
     sed -i 's#^\tglinet,gl-axt1800)$#\tglinet,gl-axt1800|\\\n\tlink,nn6000-v1)#' "${NETWORK_FILE}"
     sed -i 's#^\tyuncore,fap650)$#\tyuncore,fap650|\\\n\tlink,nn6000-v2)#' "${NETWORK_FILE}"
@@ -40,7 +40,7 @@ fi
 
 # 4. platform.sh 添加 eMMC 升级分支
 UPGRADE_SH="target/linux/qualcommax/ipq60xx/base-files/lib/upgrade/platform.sh"
-echo "[4/5] 更新 platform.sh..."
+echo "[4/8] 更新 platform.sh..."
 if ! grep -q "link,nn6000-v2)" "${UPGRADE_SH}"; then
     python3 - "${UPGRADE_SH}" <<'PYEOF'
 import io, sys
@@ -88,7 +88,7 @@ fi
 
 # 5. ipq-wifi 添加校准包
 WIFI_MK="package/firmware/ipq-wifi/Makefile"
-echo "[5/5] 更新 ipq-wifi Makefile..."
+echo "[5/8] 更新 ipq-wifi Makefile..."
 
 if ! grep -q "link_nn6000" "${WIFI_MK}"; then
     sed -i '/iodata_wn-dax3000gr \\/a\\tlink_nn6000 \\' "${WIFI_MK}"
@@ -107,5 +107,58 @@ echo "ipq-wifi 源日期: ${WIFI_SOURCE_DATE}"
 if [[ "${WIFI_SOURCE_DATE}" < "2026-01-31" ]]; then
     echo "警告: 固件源可能不包含 nn6000 BDF，需更新 PKG_SOURCE_DATE"
 fi
+
+# 6. uboot-envtools 添加 eMMC 环境分区
+ENVTOOLS="package/boot/uboot-tools/uboot-envtools/files/qualcommax_ipq60xx"
+echo "[6/8] 更新 uboot-envtools..."
+if ! grep -q "link,nn6000" "${ENVTOOLS}"; then
+    python3 - "${ENVTOOLS}" <<'PYEOF'
+import io, sys
+path = sys.argv[1]
+src = io.open(path, encoding='utf-8').read()
+block = (
+    'link,nn6000-v1|\\\n'
+    'link,nn6000-v2)\n'
+    '\tubootenv_add_mmc "0:APPSBLENV" "" "0x0" "0x40000" "0x20000"\n'
+    '\t;;\n'
+)
+anchor = 'esac\n'
+idx = src.rfind(anchor)
+if idx < 0:
+    sys.exit('ERROR: esac not found')
+src = src[:idx] + block + src[idx:]
+io.open(path, 'w', encoding='utf-8').write(src)
+PYEOF
+fi
+
+# 7. caldata hotplug 添加 eMMC 校准数据提取
+CALDATA="target/linux/qualcommax/ipq60xx/base-files/etc/hotplug.d/firmware/11-ath11k-caldata"
+echo "[7/8] 更新 caldata hotplug..."
+if ! grep -q "caldata_extract_mmc" "${CALDATA}"; then
+    python3 - "${CALDATA}" <<'PYEOF'
+import io, sys
+path = sys.argv[1]
+src = io.open(path, encoding='utf-8').read()
+block = (
+    '\tlink,nn6000-v1|\\\n'
+    '\tlink,nn6000-v2)\n'
+    '\t\tcaldata_extract_mmc "0:ART" 0x1000 0x10000\n'
+    '\t\t;;\n'
+)
+# 插在 IPQ6018 内层 case 的第一个 esac 前
+marker = '\tesac\n'
+idx = src.find(marker)
+if idx < 0:
+    sys.exit('ERROR: caldata esac not found')
+src = src[:idx] + block + src[idx:]
+io.open(path, 'w', encoding='utf-8').write(src)
+PYEOF
+fi
+
+# 8. fix_wifi_mac hotplug 复制
+WIFIMAC="target/linux/qualcommax/ipq60xx/base-files/etc/hotplug.d/ieee80211"
+echo "[8/8] 安装 fix_wifi_mac..."
+mkdir -p "${WIFIMAC}"
+cp "${FILES_DIR}/11_fix_wifi_mac" "${WIFIMAC}/"
 
 echo "==== 移植完成 ===="

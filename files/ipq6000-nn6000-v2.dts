@@ -6,11 +6,14 @@
 / {
 	model = "Link NN6000 v2";
 	compatible = "link,nn6000-v2", "qcom,ipq6018";
-};
 
-&switch {
-	switch_lan_bmp = <(ESS_PORT1 | ESS_PORT3 | ESS_PORT4 | ESS_PORT5)>;
-	switch_wan_bmp = <ESS_PORT2>;
+	aliases {
+		ethernet0 = &dp1;
+		ethernet1 = &dp2;
+		ethernet2 = &dp3;
+		ethernet3 = &dp4;
+		ethernet4 = &dp5;
+	};
 };
 
 &dp1 {
