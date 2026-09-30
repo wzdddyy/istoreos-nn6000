@@ -96,6 +96,19 @@ jobs:
           SEED
           make defconfig
 
+      # defconfig 后校验 Web 组件是否选入
+      - name: Verify web packages
+        run: |
+          cd istoreos
+          for pkg in uhttpd rpcd luci luci-base luci-app-store; do
+            if grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
+              echo "OK: ${pkg}"
+            else
+              echo "FAIL: ${pkg} 未选入 .config"
+              exit 1
+            fi
+          done
+
       # 下载源码
       - name: Download sources
         run: |
