@@ -96,18 +96,43 @@ jobs:
           SEED
           make defconfig
 
-      # defconfig 后校验 Web 组件是否选入
+      # defconfig 后诊断 Web 组件选中状态（y=内置 m=模块 缺=未选）
       - name: Verify web packages
         run: |
           cd istoreos
+          echo "==== 1. .config 中 Web 相关包状态 ===="
+          for pkg in uhttpd uhttpd-mod-ubus rpcd rpcd-mod-file luci luci-base \
+                     luci-app-store luci-lib-taskd taskd luci-app-dockerman \
+                     nginx nginx-util luci-light luci-nginx curl tar mount-utils; do
+            line=$(grep -E "^CONFIG_PACKAGE_${pkg}=" .config || echo "(未选入)")
+            echo "${pkg} : ${line}"
+          done
+
+          echo "==== 2. DEFAULT_PACKAGES 默认标记 ===="
+          grep -E "^CONFIG_DEFAULT_" .config | grep -iE 'uhttpd|luci|rpcd|nginx|store' || echo "(无默认标记)"
+
+          echo "==== 3. luci-app-store 在 packageinfo 中的依赖 ===="
+          awk '/^Package: luci-app-store$/{f=1} f{print} /^$/{if(f)exit}' tmp/.packageinfo | head -20
+
+          echo "==== 4. feeds 是否安装成功 ===="
+          ls package/feeds/
+          echo "store feed 包数量: $(ls package/feeds/store 2>/dev/null | wc -l)"
+          echo "luci feed 包数量: $(ls package/feeds/luci 2>/dev/null | wc -l)"
+
+          echo "==== 5. 构建系统选择的包管理器 ===="
+          grep -E "CONFIG_USE_(APK|OPKG)" .config || echo "(未设置)"
+
+          echo "==== 结论判定 ===="
+          fail=0
           for pkg in uhttpd rpcd luci luci-base luci-app-store; do
             if grep -q "^CONFIG_PACKAGE_${pkg}=y$" .config; then
               echo "OK: ${pkg}"
             else
-              echo "FAIL: ${pkg} 未选入 .config"
-              exit 1
+              echo "FAIL: ${pkg} 未内置"
+              fail=1
             fi
           done
+          exit $fail
 
       # 下载源码
       - name: Download sources
