@@ -93,7 +93,6 @@ jobs:
           CONFIG_TARGET_qualcommax=y
           CONFIG_TARGET_qualcommax_ipq60xx=y
           CONFIG_TARGET_qualcommax_ipq60xx_DEVICE_link_nn6000-v2=y
-          # 关闭 tar 的可选压缩支持
           # CONFIG_PACKAGE_TAR_BZIP2 is not set
           # CONFIG_PACKAGE_TAR_XZ is not set
           # CONFIG_PACKAGE_TAR_ZSTD is not set
