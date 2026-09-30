@@ -21,17 +21,6 @@
 | 用户名 / 密码 | `root` / `password` |
 | WiFi 名称 | `iStoreOS` / `iStoreOS-5G` |
 
-## 如何编译
-
-使用 GitHub Actions 手动触发：
-
-1. Fork 本仓库
-2. 进入 **Actions** 页面
-3. 选择 **Build iStoreOS NN6000 Firmware**
-4. 点击 **Run workflow**
-
-编译完成后固件会自动发布到 Releases（首次编译约需 2~4 小时，之后有工具链缓存会更快）。
-
 ## 刷写说明
 
 | 文件 | 用途 |
