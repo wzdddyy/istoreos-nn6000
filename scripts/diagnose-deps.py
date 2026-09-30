@@ -50,16 +50,23 @@ def analyze(name, depth=0):
     for label, key in (('Depends', 'dep'), ('Menu-Depends', 'mdep')):
         for raw_tok in p.get(key, '').split():
             t = raw_tok.lstrip('+')
+            # 条件依赖写法: 条件符号:实际包名，如 PACKAGE_TAR_BZIP2:bzip2
+            cond_pkg = None
+            if ':' in t and re.match(r'^[A-Z0-9_]+:', t):
+                csym, cond_pkg = t.split(':', 1)
+                cv = cfg.get(csym)
+                print('%s    %s 条件 %s = [%s] -> %s' % (ind, label, csym, cv or 'absent', cond_pkg))
+                t = cond_pkg
             neg = t.startswith('!')
             if neg:
                 t = t[1:]
-            cond = t.startswith('@')
-            if cond:
+            is_at = t.startswith('@')
+            if is_at:
                 t = t[1:]
             t = re.sub(r'\(.*?\)', '', t)
             if not t or t == 'linux':
                 continue
-            if cond:
+            if is_at:
                 v = cfg.get(t)
                 ok = (neg and v in (None, 'n')) or (not neg and v not in (None, 'n'))
                 flag = '' if ok else '  <<< 门槛不满足（根因）'
@@ -100,7 +107,23 @@ if kcfg is None:
 if kcfg:
     print('读取:', kcfg)
     text = io.open(kcfg, encoding='utf-8', errors='replace').read()
-    blocks = re.split(r'\n(?=config )', text)
+    print('文件大小: %d 字节, 行数: %d' % (len(text), text.count('\n') + 1))
+    print('config 条目总数(含缩进): %d' % len(re.findall(r'(?m)^\s*config\s+\S+', text)))
+    srcs = re.findall(r'(?m)^\s*source\s+(.+)$', text)
+    print('source 行数: %d' % len(srcs))
+    for s in srcs[:10]:
+        print('   source', s.strip())
+
+    def extract_block(t):
+        m = re.search(r'(?m)^(\s*)config\s+' + re.escape(t) + r'\b', text)
+        if not m:
+            return None
+        start = m.start()
+        # 截到下一个 config 行
+        nxt = re.search(r'(?m)^\s*config\s+\S+', text[m.end():])
+        end = m.end() + nxt.start() if nxt else len(text)
+        return text[start:end].rstrip()
+
     targets = [
         'DEFAULT_luci-app-store', 'DEFAULT_luci-app-dockerman',
         'PACKAGE_luci-app-store', 'PACKAGE_tar', 'PACKAGE_libuci-lua',
@@ -108,13 +131,11 @@ if kcfg:
         'PACKAGE_uhttpd',
     ]
     index = {}
-    for b in blocks:
-        m = re.match(r'config (\S+)', b)
-        if m:
-            index[m.group(1)] = b.rstrip()
+    for t in targets:
+        index[t] = extract_block(t)
     for t in targets:
         print('---- config %s ----' % t)
-        print(index.get(t, '(不存在)'))
+        print(index.get(t) or '(不存在)')
         print()
 else:
     print('未找到生成的 Kconfig 文件')
@@ -122,6 +143,8 @@ else:
 print('==== 5. DEFAULT 符号是如何被引用的 ====')
 if kcfg:
     for t in ('PACKAGE_luci-app-store', 'PACKAGE_luci-app-dockerman'):
-        b = index.get(t, '')
-        for dl in re.findall(r'^\s*default .*$', b, re.M):
+        b = index.get(t) or ''
+        for dl in re.findall(r'(?m)^\s*default .*$', b):
             print('%s -> %s' % (t, dl.strip()))
+        for dep in re.findall(r'(?m)^\s*depends on .*$', b):
+            print('%s -> %s' % (t, dep.strip()))
